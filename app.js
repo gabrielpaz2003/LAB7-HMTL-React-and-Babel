@@ -33,7 +33,7 @@ const NavBar = () => {
             <img src='resources/sci-fi-logo.png' alt="logo" width="40" height="40" style={logoStyles} />
             <a href='index.html' style={h2Styles}>Home</a>
             <a href='posts/post.html' style={h2Styles}>Posts</a>
-            <a href='posts/post.html' style={h2Styles}>Movies</a>
+            <a href='posts/newpost.html' style={h2Styles}>Nuevo Post</a>
         </nav>
     );
     

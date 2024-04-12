@@ -3,7 +3,7 @@ const NavBar = () => {
         position: 'fixed', // Fijar la posición de la barra de navegación
         top: 0, // Colocarla en la parte superior  
         background: 'black',
-        color: 'white', // color de texto
+        color: 'black', // color de texto
         display: 'flex',
         justifyContent: 'space-between',
         padding: '0%',
@@ -31,10 +31,10 @@ const NavBar = () => {
     
     return (
         <nav style={styles}>
-            <img src='../media/logo_ferrari.png' alt="logo" width="40" height="40" style={logoStyles} />
+            <img src='../resources/sci-fi-logo.png' alt="logo" width="40" height="40" style={logoStyles} />
             <a href='../index.html' style={h2Styles}>Home</a>
-            <a href='../posts/post.html' style={h2Styles}>Posts</a>
-            <a href='../cars/cars.html' style={h2Styles}>Cars</a>
+            <a href='./post.html' style={h2Styles}>Posts</a>
+            <a href='./newpost.html' style={h2Styles}>Nuevo Post</a>
         </nav>
     );
     
@@ -51,30 +51,42 @@ const Loading = () => {
 const PostsLoader = () => {
     const [posts, setPosts] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
-    const [error, setError] = React.useState(null); // Estado para manejar errores
+    const [error, setError] = React.useState(null);
+
+    const deletePost = async (id) => {
+        console.log(posts[id]);
+        if (window.confirm('¿Estás seguro de que deseas eliminar este post?')) {
+            try {
+                const response = await fetch(`http://localhost:3000/posts/${id}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Si la eliminación fue exitosa, filtra el post eliminado del estado
+                setPosts(prevPosts => prevPosts.filter((post) => post.id !== id));
+            } catch (error) {
+                console.error('Error al eliminar el post:', error);
+            }
+        }
+    };
 
     React.useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const response = await fetch('http://3.129.191.211/api/22944/posts');
-
+                const response = await fetch('http://localhost:3000/posts');
                 if (!response.ok) {
-                    // Si la respuesta no es 2xx, considerarlo como un error
                     throw new Error(`Error: ${response.status} ${response.statusText}`);
                 }
-
                 const data = await response.json();
-
-                // Aquí puedes agregar validaciones adicionales sobre el formato de los datos si es necesario
                 if (!Array.isArray(data)) {
-                    // Suponiendo que esperas un array de posts, si no lo es, lanza un error
                     throw new Error("Formato de datos incorrecto");
                 }
-
                 setPosts(data);
             } catch (error) {
-                // Manejar cualquier error que ocurra durante la fetch o el procesamiento de los datos
                 console.error('Error al cargar los posts:', error);
                 setError(error.toString());
             } finally {
@@ -107,24 +119,25 @@ const PostsLoader = () => {
 
     return (
         <>
-            {posts.map(post => (
-                <Card key={post.id} post={post} />
+            {posts.map((post) => (
+                <Card key={post.id} post={post} onDelete={deletePost} />
             ))}
         </>
     );
 };
 
-const Card = ({ post }) => {
-    const [isColumnLayout, setIsColumnLayout] = React.useState(false);
+const Card = ({ post, onDelete }) => {
+    const [isColumnLayout, setIsColumnLayout] = React.useState(window.innerWidth <= 768);
+    
     const cardStyles = {
         boxSizing: 'border-box',
         padding: '2%',
         margin: '5rem 0 0 0',
         boxShadow: '0 4px 8px 0 rgba(0,0,0,0.2)',
         transition: '0.3s',
-        backgroundColor: 'rgba(138, 1, 0, 1)',
+        backgroundColor: '	#000080',
         display: 'flex',
-        alignItems: isColumnLayout ? 'center' : 'center', // Centrar contenido verticalmente o al inicio
+        alignItems: 'center',
         flexDirection: isColumnLayout ? 'column' : 'row', 
         gap: '1rem',
     };
@@ -132,6 +145,7 @@ const Card = ({ post }) => {
     const TitleStyles = {
         color: 'white',
         textAlign: 'center',
+        fontSize: '22px',
         fontFamily: 'Roboto',
         flex: '1',
     };
@@ -141,7 +155,7 @@ const Card = ({ post }) => {
         textAlign: 'justify',
         fontFamily: 'Roboto',
         opacity: '0.8',
-        flex: '1',
+        flex: '2', // Ajuste para mantener la proporción si no hay imagen
     };
 
     const imageStyles = {
@@ -153,27 +167,62 @@ const Card = ({ post }) => {
         alignItems: 'center',
     };
 
+    const buttonStyles = {
+        padding: '0.5rem 1rem',
+        alignItems:  'center',
+        margin: '1rem 0',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        background: 'white', // Un color azul estándar para el botón
+        color: 'black',
+      };
+
+      const divStyle = {
+        margin: 'auto',
+        alignItems: 'center'
+      };
+
+    // Función para manejar el cambio de tamaño de la ventana
     const handleResize = () => {
-        setIsColumnLayout(window.innerWidth <= 768); // Cambiar a disposición de columna si el ancho es menor
+        setIsColumnLayout(window.innerWidth <= 768);
     };
 
+    const handleEdit = () => {
+        // Redirigir al usuario a updatepost.html con el ID del post como parámetro de consulta
+        window.location.href = `./updatepost.html?postId=${post.id}`;
+    };
+
+    // Efecto para escuchar el cambio de tamaño de la ventana
     React.useEffect(() => {
         window.addEventListener('resize', handleResize);
+
+        // Limpieza del evento
         return () => {
             window.removeEventListener('resize', handleResize);
         };
     }, []);
 
+    const imageSrc = post.image_64 || '../resources/no-image.jpg';
+
     return (
         <div style={cardStyles}>
-            <img src={`${post.imagen_url}`} alt={post.titulo} style={imageStyles} />
-            <div style={{ flex: '1' }}> {/* Div para alinear texto a la derecha */}
-                <h3 style={TitleStyles}>{post.titulo} </h3>
-                <p style={textsStyles}>{post.contenido}</p>
+            <img src={imageSrc} alt={post.title} style={imageStyles} />
+            <div style={{ flex: '1' }}>
+                <h3 style={TitleStyles}>{post.title}</h3>
+                <p style={textsStyles}>{post.content}</p>
+                {/* Agregamos los botones de eliminar y editar aquí */}
+            <div style={divStyle}>
+                <button onClick={() => onDelete(post.id)} style={buttonStyles}>Eliminar</button>
+                {/* Asumiendo que tienes una función onEdit definida y pasada a Card: */}
+                <button onClick={handleEdit} style={buttonStyles}>Editar</button>
+            </div>
+                
             </div>
         </div>
     );
 };
+
 
 Card.propTypes = {
     post: PropTypes.shape({
@@ -181,7 +230,6 @@ Card.propTypes = {
         titulo: PropTypes.string,
         contenido: PropTypes.string,
         imagen_url: PropTypes.string,
-        carro_id: PropTypes.null,
     }),
 };
 
@@ -202,7 +250,7 @@ const Footer = () => {
 
     return (
         <footer style={styles}>
-            <p>&copy; 2024 - Todos los derechos reservados Autor: Andy Fuentes</p>
+            <p>&copy; 2024 - Todos los derechos reservados Gabriel Paz UVG</p>
         </footer>
     );
 }
